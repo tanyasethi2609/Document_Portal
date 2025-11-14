@@ -1,0 +1,11 @@
+[ 2025-08-05 01:32:29,551 ] - ERROR - exception_experiment (line:27) - 
+        Error in [C:\Users\ARSHPARAM\AppData\Local\Temp\ipykernel_18592\42073593.py] at line [23]
+        Message: division by zero
+        Traceback:
+        Traceback (most recent call last):
+  File "C:\Users\ARSHPARAM\AppData\Local\Temp\ipykernel_18592\42073593.py", line 23, in <module>
+    a = 1 / 0
+        ~~^~~
+ZeroDivisionError: division by zero
+
+        
