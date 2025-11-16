@@ -25,6 +25,7 @@ FAISS_INDEX_NAME = os.getenv("FAISS_INDEX_NAME", "index")  # <--- keep consisten
 app = FastAPI(title="Document Portal API", version="0.1")
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+print('BASE_DIR:', BASE_DIR)
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
@@ -38,6 +39,7 @@ app.add_middleware(
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_ui(request: Request):
+    pass
     log.info("Serving UI homepage.")
     resp = templates.TemplateResponse("index.html", {"request": request})
     resp.headers["Cache-Control"] = "no-store"
