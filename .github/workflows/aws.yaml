@@ -1,12 +1,10 @@
 name: CI/CD to ECS Fargate
 
 on:
-  push:
-    branches:
-      - master
-  pull_request:
-    branches:
-      - master
+  workflow_run:
+    workflows: ["Run Unit Tests"] # must match the `name:` in ci.yml
+    types:
+      - completed
 
 env:
   AWS_REGION: us-east-1
@@ -21,15 +19,29 @@ permissions:
   contents: read
 
 jobs:
+  # -----------------------------------------
+  # 0. Check that CI succeeded on master
+  # -----------------------------------------
+  check-status:
+    runs-on: ubuntu-latest
+    # Only continue if tests passed AND branch is master
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'master' }}
+    steps:
+      - name: CI passed on master, proceeding
+        run: echo "CI passed on master branch, proceeding to build and deploy."
+
   # 1. Build & Push Docker Image
   build-and-push:
     name: Build & Push Docker Image
+    needs: [check-status]
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.build-image.outputs.image }}
     steps:
-      - name: Checkout Repo
+      - name: Checkout repo at tested commit
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -46,7 +58,7 @@ jobs:
         id: build-image
         env:
           ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ github.event.workflow_run.head_sha }}
         run: |
           IMAGE_URI=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
           echo "IMAGE_URI=$IMAGE_URI" >> $GITHUB_ENV
@@ -54,14 +66,18 @@ jobs:
           docker push $IMAGE_URI
           echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
 
+  # -----------------------------------------
   # 2. Deploy to ECS
+  # -----------------------------------------
   deploy:
     name: Deploy to ECS Fargate
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repo
+      - name: Checkout repo at tested commit
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
