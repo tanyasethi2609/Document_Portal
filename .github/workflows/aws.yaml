@@ -8,11 +8,6 @@ on:
     branches:
       - master
 
-# on:
-#   workflow_run:
-#     workflows: ["Run Unit Tests"] # Match the name in your ci.yaml
-#     types:
-#       - completed
 env:
   AWS_REGION: us-east-1
   ECR_REPOSITORY: documentportal
@@ -26,12 +21,9 @@ permissions:
   contents: read
 
 jobs:
-  # -------------------------------
   # 1. Build & Push Docker Image
-  # -------------------------------
   build-and-push:
     name: Build & Push Docker Image
-    needs: [check-status]
     runs-on: ubuntu-latest
     outputs:
       image: ${{ steps.build-image.outputs.image }}
@@ -62,9 +54,7 @@ jobs:
           docker push $IMAGE_URI
           echo "image=$IMAGE_URI" >> $GITHUB_OUTPUT
 
-  # -------------------------------
   # 2. Deploy to ECS
-  # -------------------------------
   deploy:
     name: Deploy to ECS Fargate
     needs: build-and-push
@@ -74,7 +64,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
@@ -87,8 +77,10 @@ jobs:
           task-definition: ${{ env.ECS_TASK_DEFINITION }}
           container-name: ${{ env.CONTAINER_NAME }}
           image: ${{ needs.build-and-push.outputs.image }}
+
       - name: Print Rendered Task
         run: cat ${{ steps.render-task.outputs.task-definition }}
+
       - name: Deploy to ECS
         uses: aws-actions/amazon-ecs-deploy-task-definition@v1
         with:
@@ -96,5 +88,6 @@ jobs:
           service: ${{ env.ECS_SERVICE }}
           cluster: ${{ env.ECS_CLUSTER }}
           wait-for-service-stability: true
+
       - name: Done!
         run: echo "Deployed to ECS Fargate Successfully"
