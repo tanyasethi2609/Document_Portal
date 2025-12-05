@@ -1,5 +1,4 @@
 name: CI/CD to ECS Fargate
-
 on:
   workflow_run:
     workflows: ["Run Unit Tests"] # must match the `name:` in ci.yml
