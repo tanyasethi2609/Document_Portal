@@ -30,8 +30,7 @@
         {
           "name": "api_keys",
           "valueFrom": "arn:aws:secretsmanager:us-east-1:928784197796:secret:api_keys-4fLFTi"
-        }
-        
+        }  
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
